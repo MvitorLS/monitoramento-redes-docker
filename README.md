@@ -1,101 +1,99 @@
-# 🌐 Stack Docker para Monitoramento de Infraestrutura de Redes
+<div align="center">
 
-Ambiente completo em Docker Compose para **coleta de métricas, monitoramento de latência/disponibilidade e visualização em tempo real de infraestruturas de rede**.
+  <!-- ANIMATED TYPING HEADER -->
+  <a href="https://github.com/MvitorLS/monitoramento-redes-docker">
+    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=24&pause=1000&color=00FF66&center=true&vCenter=true&width=650&height=65&lines=%F0%9F%93%A1+Infraestrutura+de+Monitoramento+de+Redes;Prometheus+%7C+Grafana+%7C+Blackbox+%7C+SNMP;Ping+RTT+%7C+Tr%C3%A1fego+RX%2FTX+%7C+Alertmanager" alt="Typing SVG" />
+  </a>
+
+  <p align="center">
+    <b>Stack em Docker Compose para métricas de latência, disponibilidade de hosts e análise de tráfego de rede em tempo real.</b>
+  </p>
+
+  <p align="center">
+    <img src="https://img.shields.io/badge/Prometheus-v2.54-E6522C?style=for-the-badge&logo=prometheus&logoColor=white"/>
+    <img src="https://img.shields.io/badge/Grafana-v11.1-F46800?style=for-the-badge&logo=grafana&logoColor=white"/>
+    <img src="https://img.shields.io/badge/Network_Probing-ICMP%2FHTTP%2FSNMP-00FF66?style=for-the-badge&logo=wireshark&logoColor=black"/>
+  </p>
+
+</div>
+
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif" width="100%" />
 
 ---
 
-## 🛠️ Arquitetura do Sistema
+## 🛠️ Arquitetura da Infraestrutura de Rede
 
 ```mermaid
 graph TD
-    A[Dispositivos de Rede / Servidores / Roteadores / IPs] -->|ICMP Ping / HTTP / TCP| B(Blackbox Exporter)
-    C[Host & Placas de Rede] -->|Métricas do S.O.| D(Node Exporter)
-    E[Containers Docker] -->|Uso de Banda / CPU| F(cAdvisor)
-    G[Roteadores & Switches SNMP] -->|SNMP Metrics| H(SNMP Exporter)
+    A[Roteadores / Switches / Servidores / IPs] -->|ICMP Ping / HTTP / TCP| B(Blackbox Exporter)
+    C[Host Física & Placas de Rede] -->|Métricas do S.O.| D(Node Exporter)
+    E[Containers Docker] -->|Consumo RX/TX| F(cAdvisor)
+    G[Dispositivos SNMP] -->|SNMP OIDs| H(SNMP Exporter)
 
-    B -->|Scrape| I(Prometheus)
-    D -->|Scrape| I
-    F -->|Scrape| I
-    H -->|Scrape| I
+    B -->|Scrape 15s| I(Prometheus)
+    D -->|Scrape 15s| I
+    F -->|Scrape 15s| I
+    H -->|Scrape 15s| I
 
-    I -->|Métricas & Alertas| J(Alertmanager)
-    I -->|Visualização & Dashboards| K(Grafana - Porta 3000)
+    I -->|Disparo de Regras| J(Alertmanager)
+    I -->|Painéis em Tempo Real| K(Grafana - Porta 3000)
 ```
 
 ---
 
-## 📋 Componentes e Serviços
+## 📋 Componentes da Stack
 
-| Serviço | Função na Infraestrutura | Porta Padrão |
-| :--- | :--- | :---: |
-| 📊 **Grafana** | Dashboards interativos e visualização em tempo real | `3000` |
-| ⚡ **Prometheus** | Coleta, armazenamento de séries temporais e avaliação de regras | `9090` |
-| 🌐 **Blackbox Exporter** | Testes de conectividade de rede (ICMP Ping RTT, HTTP/HTTPS, TCP) | `9115` |
-| 💻 **Node Exporter** | Métricas de rede física do servidor host, tráfego RX/TX e interfaces | `9100` |
-| 📡 **SNMP Exporter** | Leitura de métricas SNMP de switches, roteadores e firewalls | `916` |
-| 🚨 **Alertmanager** | Gerenciamento e disparo de alertas de parada de rede e alta latência | `9093` |
-| 🐳 **cAdvisor** | Monitoramento do consumo de rede e recursos dos containers Docker | `8080` |
+<div align="center">
+
+| Serviço | Função Principal na Rede | Porta | Access URL |
+| :--- | :--- | :---: | :---: |
+| 📊 **Grafana** | Dashboards interativos e mapas visuais | `3000` | `http://localhost:3000` |
+| ⚡ **Prometheus** | Coleta de séries temporais e motor de busca PromQL | `9090` | `http://localhost:9090` |
+| 🌐 **Blackbox Exporter** | Testes de latência ICMP Ping, HTTP Status e portas TCP | `9115` | `http://localhost:9115` |
+| 💻 **Node Exporter** | Métricas de hardware e tráfego de interface (RX/TX Bytes/s) | `9100` | `http://localhost:9100` |
+| 📡 **SNMP Exporter** | Leitura de métricas SNMP de ativos de rede | `9116` | `http://localhost:9116` |
+| 🚨 **Alertmanager** | Gerenciador e roteador de alertas de indisponibilidade | `9093` | `http://localhost:9093` |
+| 🐳 **cAdvisor** | Análise de tráfego e recursos dos containers Docker | `8080` | `http://localhost:8080` |
+
+</div>
 
 ---
 
 ## ⚡ Início Rápido
 
 ```bash
-# 1. Entre no repositório
+# 1. Clone o repositório
+git clone https://github.com/MvitorLS/monitoramento-redes-docker.git
 cd monitoramento-redes-docker
 
-# 2. Sobe a infraestrutura completa
+# 2. Sobe toda a stack de monitoramento
 ./monitor up
 
-# 3. Acesse o Grafana no seu navegador:
-# http://localhost:3000
-# Usuário: admin
-# Senha: admin
+# 3. Acesse o Grafana no navegador:
+# http://localhost:3000 (Credenciais: admin / admin)
 ```
 
 ---
 
-## 🖥️ Dashboards Pré-Configurados
+## 🎯 Adicionando Novos Alvos de Rede (IPs, Routers, Servidores)
 
-A aplicação já vem com o painel **"Painel de Infraestrutura de Redes — Overview"** provisionado automaticamente no Grafana, contendo:
+Com a CLI `./monitor` você adiciona novos hosts diretamente no terminal:
 
-1. **Status de Disponibilidade dos Alvos (Ping ICMP & HTTP)**: Indicador visual em tempo real do estado de cada host monitorado (🟢 UP / 🔴 DOWN).
-2. **Latência de Rede (RTT - Round Trip Time)**: Gráfico temporal comparando o tempo de resposta em milissegundos de provedores, gateways e servidores.
-3. **Tráfego de Banda de Rede do Host (RX/TX)**: Taxa de download e upload em Bytes/s separada por interface de rede.
-
----
-
-## 🎯 Como Adicionar Novos Alvos de Rede para Monitorar
-
-Você pode adicionar novos roteadores, switches, servidores ou endereços IP para monitorar de duas formas:
-
-### 1. Via linha de comando (Recomendado)
 ```bash
-./monitor add-target 192.168.1.1 ping      # Adiciona teste de Ping ICMP
-./monitor add-target https://meusite.com http # Adiciona teste HTTP/HTTPS
-```
+# Adicionar teste de Ping ICMP em um Roteador/IP
+./monitor add-target 192.168.1.1 ping
 
-### 2. Manualmente via arquivo
-Edite o arquivo `prometheus/prometheus.yml` na seção `targets` e execute:
-```bash
+# Adicionar monitoramento HTTP em um Servidor/Site
+./monitor add-target https://meusite.com http
+
+# Recarregar as configurações do Prometheus
 ./monitor reload
 ```
 
 ---
 
-## 🛠️ Comandos do CLI `./monitor`
-
-```bash
-./monitor up                # Sobe todos os containers de monitoramento
-./monitor down              # Para e remove os containers
-./monitor status            # Exibe o status da stack
-./monitor logs [serviço]    # Visualiza os logs em tempo real
-./monitor targets           # Lista os alvos configurados no Prometheus
-./monitor reload            # Recarrega configurações do Prometheus
-```
-
----
+<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif" width="100%" />
 
 <div align="center">
-  <sub>Desenvolvido com excelência por <b>Matheus Vitor Lourenço Schionato</b></sub>
+  <sub>Projetado e desenvolvido por <b>Matheus Vitor Lourenço Schionato</b></sub>
 </div>
