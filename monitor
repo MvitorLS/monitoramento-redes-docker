@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Monitor — CLI de Gestão da Infraestrutura de Monitoramento de Redes
+# Autor: Matheus Vitor Lourenço Schionato (MvitorLS)
+# ==============================================================================
+
+set -e
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$DIR"
+
+BOLD='\030[1m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+function show_help() {
+  echo -e "${BLUE}${BOLD}🌐 Monitor — Controle da Infraestrutura de Redes (Docker)${NC}\n"
+  echo "Uso: ./monitor <comando> [opções]"
+  echo ""
+  echo "Comandos disponíveis:"
+  echo -e "  ${GREEN}up${NC}               Sobe toda a stack de monitoramento de redes"
+  echo -e "  ${GREEN}down${NC}             Para e remove a stack de containers"
+  echo -e "  ${GREEN}restart${NC}          Reinicia todos os serviços"
+  echo -e "  ${GREEN}status${NC}           Exibe o status dos containers e portas"
+  echo -e "  ${GREEN}logs [serviço]${NC}   Exibe logs em tempo real (ex: ./monitor logs prometheus)"
+  echo -e "  ${GREEN}targets${NC}          Exibe os alvos de rede configurados"
+  echo -e "  ${GREEN}add-target <alvo> [type]${NC}  Adiciona um IP ou domínio aos testes (ex: ./monitor add-target 192.168.1.50 ping)"
+  echo -e "  ${GREEN}reload${NC}           Recarrega as configurações do Prometheus sem derrubar o container"
+  echo -e "  ${GREEN}help${NC}             Exibe esta ajuda"
+  echo ""
+  echo -e "${YELLOW}Serviços e Portas:${NC}"
+  echo "  - Grafana (Painel Visual):   http://localhost:3000 (admin / admin)"
+  echo "  - Prometheus (Métricas):    http://localhost:9090"
+  echo "  - Blackbox Exporter (Ping): http://localhost:9115"
+  echo "  - Node Exporter (Host):     http://localhost:9100"
+  echo "  - Alertmanager (Alertas):   http://localhost:9093"
+  echo ""
+}
+
+case "$1" in
+  up)
+    echo -e "${BLUE}🚀 Subindo infraestrutura de monitoramento de redes...${NC}"
+    docker compose up -d
+    echo -e "${GREEN}✅ Infraestrutura no ar!${NC}"
+    echo -e "Acesse o Grafana em: ${BOLD}http://localhost:3000${NC} (Usuário: admin / Senha: admin)"
+    ;;
+
+  down)
+    echo -e "${YELLOW}🛑 Parando infraestrutura...${NC}"
+    docker compose down
+    echo -e "${GREEN}✅ Serviços parados com sucesso!${NC}"
+    ;;
+
+  restart)
+    echo -e "${BLUE}🔄 Reiniciando serviços...${NC}"
+    docker compose restart
+    echo -e "${GREEN}✅ Serviços reiniciados!${NC}"
+    ;;
+
+  status|ps)
+    echo -e "${BLUE}📊 Status dos Containers:${NC}"
+    docker compose ps
+    ;;
+
+  logs)
+    shift
+    docker compose logs -f "$@"
+    ;;
+
+  targets)
+    echo -e "${BLUE}🎯 Alvos de Rede Monitorados no Prometheus:${NC}"
+    grep -A 10 "targets:" prometheus/prometheus.yml | grep -E '^\s*-\s*"'
+    ;;
+
+  add-target)
+    TARGET="$2"
+    TYPE="${3:-ping}"
+    if [ -z "$TARGET" ]; then
+      echo -e "${RED}Erro: Informe o IP ou domínio. Exemplo: ./monitor add-target 192.168.1.100 ping${NC}"
+      exit 1
+    fi
+    echo -e "${BLUE}➕ Adicionando $TARGET à monitoria ($TYPE)...${NC}"
+    python3 -c "
+import yaml
+with open('prometheus/prometheus.yml', 'r') as f:
+    cfg = yaml.safe_load(f)
+job_name = 'blackbox-ping' if '$TYPE' == 'ping' else 'blackbox-http'
+for job in cfg.get('scrape_configs', []):
+    if job.get('job_name') == job_name:
+        targets = job['static_configs'][0]['targets']
+        if '$TARGET' not in targets:
+            targets.append('$TARGET')
+            print('Alvo adicionado com sucesso!')
+        else:
+            print('Alvo já existia.')
+with open('prometheus/prometheus.yml', 'w') as f:
+    yaml.dump(cfg, f, default_flow_style=False)
+"
+    docker compose exec -T prometheus kill -HUP 1 2>/dev/null || true
+    echo -e "${GREEN}✅ Alvo $TARGET adicionado e Prometheus atualizado!${NC}"
+    ;;
+
+  reload)
+    echo -e "${BLUE}♻️ Recarregando configurações do Prometheus...${NC}"
+    curl -s -X POST http://localhost:9090/-/reload || docker compose exec -T prometheus kill -HUP 1
+    echo -e "${GREEN}✅ Configuração recarregada com sucesso!${NC}"
+    ;;
+
+  *)
+    show_help
+    ;;
+esac

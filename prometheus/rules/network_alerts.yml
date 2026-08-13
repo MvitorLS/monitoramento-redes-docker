@@ -1,0 +1,29 @@
+groups:
+  - name: network_alerts
+    rules:
+      - alert: NetworkTargetDown
+        expr: probe_success == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Dispositivo de Rede / Alvo Indisponível: {{ $labels.instance }}"
+          description: "O alvo de rede {{ $labels.instance }} não respondeu aos testes de conectividade."
+
+      - alert: HighNetworkLatency
+        expr: probe_duration_seconds{job="blackbox-ping"} > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alta Latência de Rede: {{ $labels.instance }}"
+          description: "A latência para {{ $labels.instance }} está acima de 100ms (Atual: {{ $value | humanizeDuration }})."
+
+      - alert: NodeExporterDown
+        expr: up{job="node-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Node Exporter Indisponível"
+          description: "O serviço Node Exporter no host não está respondendo."
