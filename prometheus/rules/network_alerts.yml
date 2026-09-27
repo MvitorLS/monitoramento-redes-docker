@@ -11,7 +11,7 @@ groups:
           description: "O alvo de rede {{ $labels.instance }} não respondeu aos testes de conectividade."
 
       - alert: HighNetworkLatency
-        expr: probe_duration_seconds{job="blackbox-ping"} > 0.1
+        expr: probe_duration_seconds{job="blackbox-ping"} > 0.1 and on(instance) probe_success == 1
         for: 2m
         labels:
           severity: warning
