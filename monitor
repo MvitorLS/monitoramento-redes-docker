@@ -9,7 +9,7 @@ set -e
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$DIR"
 
-BOLD='\030[1m'
+BOLD='\033[1m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 RED='\033[0;31m'
